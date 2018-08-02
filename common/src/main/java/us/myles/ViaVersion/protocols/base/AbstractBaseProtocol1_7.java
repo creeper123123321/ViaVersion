@@ -7,6 +7,7 @@ import com.google.gson.JsonParseException;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import lombok.AllArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import us.myles.ViaVersion.api.PacketWrapper;
 import us.myles.ViaVersion.api.Pair;
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
-public class BaseProtocol1_7 extends Protocol {
+public class AbstractBaseProtocol1_7 extends Protocol {
 
     @Override
     protected void registerPackets() {
@@ -131,7 +132,7 @@ public class BaseProtocol1_7 extends Protocol {
                         Via.getManager().addPortedClient(wrapper.user());
 
                         if (info.getPipeline().pipes().size() == 2
-                                && info.getPipeline().pipes().get(1).getClass() == BaseProtocol1_7.class
+                                && info.getPipeline().pipes().get(1).getClass() == AbstractBaseProtocol1_7.this.getClass()
                                 && info.getPipeline().pipes().get(0).getClass() == BaseProtocol.class) // Only base protocol
                             wrapper.user().setActive(false);
 
@@ -201,5 +202,34 @@ public class BaseProtocol1_7 extends Protocol {
         idBuff.insert(12, '-');
         idBuff.insert(8, '-');
         return idBuff.toString();
+    }
+
+    protected static String transformBrand(String brand, UserConnection user) {
+        ProtocolInfo info = user.get(ProtocolInfo.class);
+
+        return "ViaVersion (" +
+                Via.getAPI().getVersion() +
+                ", " +
+                info.getServerProtocolVersion() +
+                ") <- " +
+                brand;
+    }
+
+    @AllArgsConstructor
+    protected static class BrandRemapper extends PacketRemapper {
+        private String brandChannel;
+
+        @Override
+        public void registerMap() {
+            map(Type.STRING);
+            handler(new PacketHandler() {
+                @Override
+                public void handle(PacketWrapper wrapper) throws Exception {
+                    if (wrapper.get(Type.STRING, 0).equals(brandChannel)) {
+                        wrapper.write(Type.STRING, transformBrand(wrapper.read(Type.STRING), wrapper.user()));
+                    }
+                }
+            });
+        }
     }
 }
