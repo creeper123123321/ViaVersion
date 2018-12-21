@@ -132,19 +132,35 @@ public class PlayerPackets {
                             String[] players = wrapper.read(Type.STRING_ARRAY); // Players
                             final EntityTracker entityTracker = wrapper.user().get(EntityTracker.class);
                             String myName = wrapper.user().get(ProtocolInfo.class).getUsername();
+                            String teamName = wrapper.get(Type.STRING, 0);
                             for (String player : players) {
                                 if (entityTracker.isAutoTeam() && player.equalsIgnoreCase(myName)) {
                                     if (mode == 4) {
                                         // since removing add to auto team
+                                        System.out.println("add because we were removed from team "+teamName);
                                         entityTracker.sendTeamPacket(true, false);
-
+                                        entityTracker.setCurrentTeam("viaversion");
                                     } else {
                                         // since adding remove from auto team
+                                        System.out.println("removing because we were added to team "+teamName);
                                         entityTracker.sendTeamPacket(false, true);
+                                        entityTracker.setCurrentTeam(teamName);
                                     }
                                 }
                             }
                             wrapper.write(Type.STRING_ARRAY, players);
+                        }
+
+                        if (mode == 1) { // Remove team
+                            final EntityTracker entityTracker = wrapper.user().get(EntityTracker.class);
+                            String teamName = wrapper.get(Type.STRING, 0);
+                            if (entityTracker.isAutoTeam()
+                                    && teamName.equals(entityTracker.getCurrentTeam())) {
+                                // team was removed
+                                System.out.println("add because team "+teamName+" was removed");
+                                entityTracker.sendTeamPacket(true, false);
+                                entityTracker.setCurrentTeam("viaversion");
+                            }
                         }
                     }
                 });
@@ -199,6 +215,7 @@ public class PlayerPackets {
                             EntityTracker entityTracker = wrapper.user().get(EntityTracker.class);
                             entityTracker.setAutoTeam(true);
                             entityTracker.sendTeamPacket(true, false);
+                            entityTracker.setCurrentTeam("viaversion");
                         }
                     }
                 });

@@ -53,6 +53,8 @@ public class EntityTracker extends StoredObject {
     private GameMode gameMode;
     @Setter
     private int mainHand;
+    @Setter
+    private String currentTeam;
 
     public EntityTracker(UserConnection user) {
         super(user);
@@ -242,6 +244,7 @@ public class EntityTracker extends StoredObject {
     }
 
     public void sendTeamPacket(boolean add, boolean now) {
+        System.out.println("add "+add+ "  now "+ now);
         PacketWrapper wrapper = new PacketWrapper(0x41, null, getUser());
         wrapper.write(Type.STRING, "viaversion"); // Use viaversion as name
         if (add) {
