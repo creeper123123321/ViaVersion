@@ -190,6 +190,18 @@ public class PlayerPackets {
                             }
                         }
                 );
+
+                // Scoreboard will be cleared when join game is received
+                handler(new PacketHandler() {
+                    @Override
+                    public void handle(PacketWrapper wrapper) throws Exception {
+                        if (Via.getConfig().isAutoTeam()) {
+                            EntityTracker entityTracker = wrapper.user().get(EntityTracker.class);
+                            entityTracker.setAutoTeam(true);
+                            entityTracker.sendTeamPacket(true, false);
+                        }
+                    }
+                });
             }
         });
 
