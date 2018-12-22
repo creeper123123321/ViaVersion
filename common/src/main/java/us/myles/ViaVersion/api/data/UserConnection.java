@@ -1,6 +1,7 @@
 package us.myles.ViaVersion.api.data;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -15,9 +16,11 @@ import us.myles.ViaVersion.api.type.Type;
 import us.myles.ViaVersion.protocols.base.ProtocolInfo;
 import us.myles.ViaVersion.util.PipelineUtil;
 
+import java.util.Deque;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -39,6 +42,7 @@ public class UserConnection {
     private int secondsObserved = 0;
     private int warnings = 0;
     private ReadWriteLock velocityLock = new ReentrantReadWriteLock();
+    private Deque<Runnable> postProcessingTasks = new ConcurrentLinkedDeque<>();
 
     public UserConnection(Channel channel) {
         this.channel = channel;
@@ -250,5 +254,43 @@ public class UserConnection {
      */
     public void sendRawPacketToServer(ByteBuf packet) {
         sendRawPacketToServer(packet, false);
+    }
+
+    public void sendRawPacketAfterProcessing(final ByteBuf packet) {
+        final ChannelHandler handler = channel.pipeline().get(Via.getManager().getInjector().getEncoderName());
+        final ByteBuf copy = Unpooled.buffer().writeBytes(packet); // Use Unpooled heap so the buffer can be collected by GC
+        packet.release();
+        getPostProcessingTasks().add(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        channel.pipeline().context(handler).writeAndFlush(copy);
+                    }
+                }
+        );
+    }
+
+    public void sendRawPacketToServerAfterProcessing(ByteBuf packet) {
+        final ByteBuf buf = Unpooled.buffer();
+        try {
+            Type.VAR_INT.write(buf, PacketWrapper.PASSTHROUGH_ID);
+        } catch (Exception e) {
+            // Should not happen
+            Via.getPlatform().getLogger().warning("Type.VAR_INT.write thrown an exception: " + e);
+        }
+        buf.writeBytes(packet);
+        packet.release();
+        final ChannelHandlerContext context = PipelineUtil
+                .getPreviousContext(Via.getManager().getInjector().getDecoderName(), getChannel().pipeline());
+        getPostProcessingTasks().add(new Runnable() {
+            @Override
+            public void run() {
+                if (context != null) {
+                    context.fireChannelRead(buf);
+                } else {
+                    getChannel().pipeline().fireChannelRead(buf);
+                }
+            }
+        });
     }
 }

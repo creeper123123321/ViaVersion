@@ -276,7 +276,8 @@ public class PacketWrapper {
     /**
      * Send this packet to the associated user.
      * Be careful not to send packets twice.
-     * (Sends it after current)
+     * (Sends it after current) (NOTE: May be sent after more packets be processed,
+     * use {@link #sendAfterProcessing(Class, boolean)} if you need to be exactly after this current packet)
      *
      * @param packetProtocol      - The protocol version of the packet.
      * @param skipCurrentPipeline - Skip the current pipeline
@@ -289,7 +290,8 @@ public class PacketWrapper {
     /**
      * Send this packet to the associated user.
      * Be careful not to send packets twice.
-     * (Sends it after current)
+     * (Sends it after current if currentThread is false) (NOTE: May be sent after more packets be processed,
+     * use {@link #sendAfterProcessing(Class, boolean)} if you need to be exactly after this current packet)
      *
      * @param packetProtocol      - The protocol version of the packet.
      * @param skipCurrentPipeline - Skip the current pipeline
@@ -301,6 +303,36 @@ public class PacketWrapper {
             ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
             user().sendRawPacket(output, currentThread);
         }
+    }
+
+    /**
+     * Sends this packet to the user.
+     * It will be sent after the current packet is written to channel or the packet is processed by the server
+     *
+     * @param packetProtocol      - The protocol version of the packet.
+     * @param skipCurrentPipeline - Skip the current pipeline
+     * @throws Exception if it fails to write
+     */
+    public void sendAfterProcessing(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline) throws Exception {
+        if (!isCancelled()) {
+            ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
+            user().sendRawPacketAfterProcessing(output);
+        }
+    }
+
+    public void sendAfterProcessing(Class<? extends Protocol> packetProtocol) throws Exception {
+        sendAfterProcessing(packetProtocol, true);
+    }
+
+    public void sendToServerAfterProcessing(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline) throws Exception {
+        if (!isCancelled()) {
+            ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
+            user().sendRawPacketToServerAfterProcessing(output);
+        }
+    }
+
+    public void sendToServerAfterProcessing(Class<? extends Protocol> packetProtocol) throws Exception {
+        sendToServerAfterProcessing(packetProtocol, true);
     }
 
     /**
@@ -486,9 +518,9 @@ public class PacketWrapper {
     /**
      * Send this packet to the server.
      *
-     * @param packetProtocol - The protocol version of the packet.
+     * @param packetProtocol      - The protocol version of the packet.
      * @param skipCurrentPipeline - Skip the current pipeline
-     * @param currentThread - Run in the same thread
+     * @param currentThread       - Run in the same thread
      * @throws Exception if it fails to write
      */
     public void sendToServer(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline, boolean currentThread) throws Exception {

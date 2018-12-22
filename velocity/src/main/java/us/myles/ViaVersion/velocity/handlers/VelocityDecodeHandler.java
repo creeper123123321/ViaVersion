@@ -13,6 +13,7 @@ import us.myles.ViaVersion.packets.Direction;
 import us.myles.ViaVersion.protocols.base.ProtocolInfo;
 import us.myles.ViaVersion.util.PipelineUtil;
 
+import java.util.Iterator;
 import java.util.List;
 
 @ChannelHandler.Sharable
@@ -73,6 +74,26 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (PipelineUtil.containsCause(cause, CancelException.class)) return;
+        if (info.isActive()) {
+            Iterator<Runnable> iterator = info.getPostProcessingTasks().iterator();
+            while (iterator.hasNext()) {
+                iterator.next().run();
+                iterator.remove();
+            }
+        }
         super.exceptionCaught(ctx, cause);
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        super.channelRead(ctx, msg);
+        if (info.isActive()) {
+            Iterator<Runnable> iterator = info.getPostProcessingTasks().iterator();
+            while (iterator.hasNext()) {
+                iterator.next().run();
+                iterator.remove();
+            }
+        }
+        // todo implement to other platforms
     }
 }

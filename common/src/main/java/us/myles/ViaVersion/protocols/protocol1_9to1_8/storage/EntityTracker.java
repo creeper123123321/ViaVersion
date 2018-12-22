@@ -267,7 +267,11 @@ public class EntityTracker extends StoredObject {
         }
         teamExists = add;
         try {
-            wrapper.send(Protocol1_9TO1_8.class, true, now);
+            if (now) {
+                wrapper.send(Protocol1_9TO1_8.class, true, true);
+            } else {
+                wrapper.sendAfterProcessing(Protocol1_9TO1_8.class);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

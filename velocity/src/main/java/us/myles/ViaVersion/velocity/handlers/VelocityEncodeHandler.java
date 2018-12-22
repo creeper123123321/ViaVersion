@@ -3,6 +3,7 @@ package us.myles.ViaVersion.velocity.handlers;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
@@ -16,6 +17,7 @@ import us.myles.ViaVersion.packets.Direction;
 import us.myles.ViaVersion.protocols.base.ProtocolInfo;
 import us.myles.ViaVersion.util.PipelineUtil;
 
+import java.util.Iterator;
 import java.util.List;
 
 @ChannelHandler.Sharable
@@ -85,6 +87,25 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (PipelineUtil.containsCause(cause, CancelException.class)) return;
+        if (info.isActive()) {
+            Iterator<Runnable> iterator = info.getPostProcessingTasks().iterator();
+            while (iterator.hasNext()) {
+                iterator.next().run();
+                iterator.remove();
+            }
+        }
         super.exceptionCaught(ctx, cause);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        super.write(ctx, msg, promise);
+        if (info.isActive()) {
+            Iterator<Runnable> iterator = info.getPostProcessingTasks().iterator();
+            while (iterator.hasNext()) {
+                iterator.next().run();
+                iterator.remove();
+            }
+        }
     }
 }

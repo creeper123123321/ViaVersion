@@ -25,7 +25,7 @@ public class BungeeMovementTransmitter extends MovementTransmitterProvider {
             PacketWrapper wrapper = new PacketWrapper(0x03, null, userConnection);
             wrapper.write(Type.BOOLEAN, userConnection.get(MovementTracker.class).isGround());
             try {
-                wrapper.sendToServer(Protocol1_9TO1_8.class);
+                wrapper.sendToServer(Protocol1_9TO1_8.class, true, false);
             } catch (Exception e) {
                 e.printStackTrace();
             }
