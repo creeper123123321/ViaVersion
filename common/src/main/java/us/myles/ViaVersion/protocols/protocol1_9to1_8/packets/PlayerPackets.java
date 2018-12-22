@@ -137,12 +137,10 @@ public class PlayerPackets {
                                 if (entityTracker.isAutoTeam() && player.equalsIgnoreCase(myName)) {
                                     if (mode == 4) {
                                         // since removing add to auto team
-                                        System.out.println("add because we were removed from team "+teamName);
                                         entityTracker.sendTeamPacket(true, false);
                                         entityTracker.setCurrentTeam("viaversion");
                                     } else {
                                         // since adding remove from auto team
-                                        System.out.println("removing because we were added to team "+teamName);
                                         entityTracker.sendTeamPacket(false, true);
                                         entityTracker.setCurrentTeam(teamName);
                                     }
@@ -157,7 +155,6 @@ public class PlayerPackets {
                             if (entityTracker.isAutoTeam()
                                     && teamName.equals(entityTracker.getCurrentTeam())) {
                                 // team was removed
-                                System.out.println("add because team "+teamName+" was removed");
                                 entityTracker.sendTeamPacket(true, false);
                                 entityTracker.setCurrentTeam("viaversion");
                             }
