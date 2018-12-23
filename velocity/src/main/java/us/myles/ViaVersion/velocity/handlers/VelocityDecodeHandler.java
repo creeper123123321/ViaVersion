@@ -72,12 +72,14 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (PipelineUtil.containsCause(cause, CancelException.class)) return;
-        if (info.isActive()) {
-            Runnable runnable;
-            while ((runnable = info.getPostProcessingTasks().poll()) != null) {
-                runnable.run();
+        if (PipelineUtil.containsCause(cause, CancelException.class)) {
+            if (user.isActive()) {
+                Runnable runnable;
+                while ((runnable = user.getPostProcessingTasks().poll()) != null) {
+                    runnable.run();
+                }
             }
+            return;
         }
         super.exceptionCaught(ctx, cause);
     }
