@@ -189,7 +189,7 @@ public class MetadataRewriter {
                                     wrapper.write(Type.SHORT, (short) 0);
                                     wrapper.write(Type.BOOLEAN, true);
 
-                                    wrapper.send(Protocol1_11To1_10.class);
+                                    wrapper.sendAfterProcessing(Protocol1_11To1_10.class);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }

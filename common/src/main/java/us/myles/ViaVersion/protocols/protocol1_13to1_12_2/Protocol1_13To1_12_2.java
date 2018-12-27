@@ -78,7 +78,7 @@ public class Protocol1_13To1_12_2 extends Protocol {
 
                             wrapper.write(Type.VAR_INT, 0); // Root node index
                         }
-                    }).send(Protocol1_13To1_12_2.class);
+                    }).sendAfterProcessing(Protocol1_13To1_12_2.class);
 
                     // Send tags packet
                     w.create(0x55, new ValueCreator() {
@@ -100,7 +100,7 @@ public class Protocol1_13To1_12_2 extends Protocol {
                                 wrapper.write(Type.VAR_INT_ARRAY, tag.getValue().clone());
                             }
                         }
-                    }).send(Protocol1_13To1_12_2.class);
+                    }).sendAfterProcessing(Protocol1_13To1_12_2.class);
                 }
             };
 
@@ -305,7 +305,7 @@ public class Protocol1_13To1_12_2 extends Protocol {
                                     PacketWrapper packet = wrapper.create(0x18);
                                     packet.write(Type.VAR_INT, newItem);
                                     packet.write(Type.VAR_INT, ticks);
-                                    packet.send(Protocol1_13To1_12_2.class);
+                                    packet.send(Protocol1_13To1_12_2.class, true, true);
                                 } else {
                                     break;
                                 }
@@ -317,7 +317,7 @@ public class Protocol1_13To1_12_2 extends Protocol {
                                     PacketWrapper packet = wrapper.create(0x18);
                                     packet.write(Type.VAR_INT, newItem);
                                     packet.write(Type.VAR_INT, ticks);
-                                    packet.send(Protocol1_13To1_12_2.class);
+                                    packet.send(Protocol1_13To1_12_2.class, true, true);
                                 } else {
                                     break;
                                 }

@@ -44,7 +44,7 @@ public class CommandBlockProvider implements Provider {
         wrapper.write(Type.INT, user.get(EntityTracker.class).getProvidedEntityId()); // Entity ID
         wrapper.write(Type.BYTE, (byte) 26); // Hardcoded op permission level
 
-        wrapper.send(Protocol1_9TO1_8.class);
+        wrapper.sendAfterProcessing(Protocol1_9TO1_8.class);
 
         user.get(CommandBlockStorage.class).setPermissions(true);
     }

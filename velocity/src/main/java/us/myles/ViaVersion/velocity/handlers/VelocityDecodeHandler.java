@@ -96,5 +96,6 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
         // todo implement to other platforms
         // todo test when writing packets
         // todo refactor PacketWrapper#send usages for eventloop
+        // todo think what to do with sendToServer with currentThread=true + sendAfterProcessing order issues
     }
 }

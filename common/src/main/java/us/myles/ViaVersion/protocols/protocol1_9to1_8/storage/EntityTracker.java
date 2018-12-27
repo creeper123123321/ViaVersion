@@ -80,7 +80,7 @@ public class EntityTracker extends StoredObject {
         wrapper.write(Type.VAR_INT, 1); // slot
         wrapper.write(Type.ITEM, item);
         try {
-            wrapper.send(Protocol1_9TO1_8.class);
+            wrapper.sendAfterProcessing(Protocol1_9TO1_8.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -188,7 +188,7 @@ public class EntityTracker extends StoredObject {
                                 wrapper.write(Type.SHORT, (short) (128D * (Via.getConfig().getHologramYOffset() * 32D)));
                                 wrapper.write(Type.SHORT, (short) 0);
                                 wrapper.write(Type.BOOLEAN, true);
-                                wrapper.send(Protocol1_9TO1_8.class, true, false);
+                                wrapper.sendAfterProcessing(Protocol1_9TO1_8.class, true);
                             } catch (Exception ignored) {
                             }
                         }
@@ -244,7 +244,6 @@ public class EntityTracker extends StoredObject {
     }
 
     public void sendTeamPacket(boolean add, boolean now) {
-        System.out.println("add "+add+ "  now "+ now);
         PacketWrapper wrapper = new PacketWrapper(0x41, null, getUser());
         wrapper.write(Type.STRING, "viaversion"); // Use viaversion as name
         if (add) {
@@ -296,7 +295,7 @@ public class EntityTracker extends StoredObject {
             handleMetadata(entityID, metadataList);
             if (metadataList.size() > 0) {
                 try {
-                    wrapper.send(Protocol1_9TO1_8.class);
+                    wrapper.sendAfterProcessing(Protocol1_9TO1_8.class);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
