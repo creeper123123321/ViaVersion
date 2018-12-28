@@ -16,11 +16,8 @@ import us.myles.ViaVersion.api.type.Type;
 import us.myles.ViaVersion.protocols.base.ProtocolInfo;
 import us.myles.ViaVersion.util.PipelineUtil;
 
-import java.util.Deque;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -42,7 +39,12 @@ public class UserConnection {
     private int secondsObserved = 0;
     private int warnings = 0;
     private ReadWriteLock velocityLock = new ReentrantReadWriteLock();
-    private Deque<Runnable> postProcessingTasks = new ConcurrentLinkedDeque<>();
+    private ThreadLocal<Deque<List<Runnable>>> postProcessingTasks = new ThreadLocal<Deque<List<Runnable>>>() {
+        @Override
+        protected Deque<List<Runnable>> initialValue() {
+            return new ArrayDeque<>();
+        }
+    };
 
     public UserConnection(Channel channel) {
         this.channel = channel;
@@ -260,7 +262,7 @@ public class UserConnection {
         final ChannelHandler handler = channel.pipeline().get(Via.getManager().getInjector().getEncoderName());
         final ByteBuf copy = Unpooled.buffer().writeBytes(packet); // Use Unpooled heap so the buffer can be collected by GC
         packet.release();
-        getPostProcessingTasks().add(
+        getPostProcessingTasks().get().getLast().add(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -282,7 +284,7 @@ public class UserConnection {
         packet.release();
         final ChannelHandlerContext context = PipelineUtil
                 .getPreviousContext(Via.getManager().getInjector().getDecoderName(), getChannel().pipeline());
-        getPostProcessingTasks().add(new Runnable() {
+        getPostProcessingTasks().get().getLast().add(new Runnable() {
             @Override
             public void run() {
                 if (context != null) {

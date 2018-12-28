@@ -17,6 +17,7 @@ import us.myles.ViaVersion.packets.Direction;
 import us.myles.ViaVersion.protocols.base.ProtocolInfo;
 import us.myles.ViaVersion.util.PipelineUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @ChannelHandler.Sharable
@@ -87,8 +88,7 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (PipelineUtil.containsCause(cause, CancelException.class)) {
             if (info.isActive()) {
-                Runnable runnable;
-                while ((runnable = info.getPostProcessingTasks().poll()) != null) {
+                for (Runnable runnable : info.getPostProcessingTasks().get().pollLast()) {
                     runnable.run();
                 }
             }
@@ -99,10 +99,10 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        info.getPostProcessingTasks().get().addLast(new ArrayList<>());
         super.write(ctx, msg, promise);
         if (info.isActive()) {
-            Runnable runnable;
-            while ((runnable = info.getPostProcessingTasks().poll()) != null) {
+            for (Runnable runnable : info.getPostProcessingTasks().get().pollLast()) {
                 runnable.run();
             }
         }
