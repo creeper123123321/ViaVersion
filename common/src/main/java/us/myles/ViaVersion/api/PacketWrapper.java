@@ -313,10 +313,21 @@ public class PacketWrapper {
      * @param skipCurrentPipeline - Skip the current pipeline
      * @throws Exception if it fails to write
      */
-    public void sendAfterProcessing(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline) throws Exception {
+    public void sendAfterProcessing(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline) throws Exception {
         if (!isCancelled()) {
-            ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
-            user().sendRawPacketAfterProcessing(output);
+            user().getPostProcessingTasks().get().getLast().add(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                final ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
+                                user().sendRawPacket(output, true);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+            );
         }
     }
 
@@ -324,10 +335,19 @@ public class PacketWrapper {
         sendAfterProcessing(packetProtocol, true);
     }
 
-    public void sendToServerAfterProcessing(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline) throws Exception {
+    public void sendToServerAfterProcessing(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline) throws Exception {
         if (!isCancelled()) {
-            ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
-            user().sendRawPacketToServerAfterProcessing(output);
+            user().getPostProcessingTasks().get().getLast().add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
+                        user().sendRawPacketToServer(output, true);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
         }
     }
 
