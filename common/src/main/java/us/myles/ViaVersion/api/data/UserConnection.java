@@ -38,7 +38,7 @@ public class UserConnection {
     private int secondsObserved = 0;
     private int warnings = 0;
     private ReadWriteLock velocityLock = new ReentrantReadWriteLock();
-    private ThreadLocal<Deque<List<Runnable>>> postProcessingTasks = new ThreadLocal<Deque<List<Runnable>>>() {
+    private ThreadLocal<Deque<List<Runnable>>> afterSendTasks = new ThreadLocal<Deque<List<Runnable>>>() {
         @Override
         protected Deque<List<Runnable>> initialValue() {
             return new ArrayDeque<>();
@@ -47,6 +47,18 @@ public class UserConnection {
 
     public UserConnection(Channel channel) {
         this.channel = channel;
+    }
+
+    public AutoCloseable createTaskListAndRunOnClose() {
+        getAfterSendTasks().get().addLast(new ArrayList<Runnable>());
+        return new AutoCloseable() {
+            @Override
+            public void close() throws Exception {
+                for (Runnable runnable : getAfterSendTasks().get().pollLast()) {
+                    runnable.run();
+                }
+            }
+        };
     }
 
     /**

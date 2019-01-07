@@ -276,8 +276,7 @@ public class PacketWrapper {
     /**
      * Send this packet to the associated user.
      * Be careful not to send packets twice.
-     * (Sends it after current) (NOTE: May be sent after more packets be processed,
-     * use {@link #sendAfterProcessing(Class, boolean)} if you need to be exactly after this current packet)
+     * (Sends it after current)
      *
      * @param packetProtocol      - The protocol version of the packet.
      * @param skipCurrentPipeline - Skip the current pipeline
@@ -290,18 +289,38 @@ public class PacketWrapper {
     /**
      * Send this packet to the associated user.
      * Be careful not to send packets twice.
-     * (Sends it after current if currentThread is false) (NOTE: May be sent after more packets be processed,
-     * use {@link #sendAfterProcessing(Class, boolean)} if you need to be exactly after this current packet)
+     * (Sends it after current if currentThread is false)
      *
      * @param packetProtocol      - The protocol version of the packet.
      * @param skipCurrentPipeline - Skip the current pipeline
      * @param currentThread       - Run in the same thread
      * @throws Exception if it fails to write
      */
-    public void send(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline, boolean currentThread) throws Exception {
+    public void send(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline, boolean currentThread) throws Exception {
         if (!isCancelled()) {
-            ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
-            user().sendRawPacket(output, currentThread);
+            List<Runnable> taskList = user().getAfterSendTasks().get().getLast();
+            if (!currentThread && taskList != null) {
+                taskList.add(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                                    user().getAfterSendTasks().get().addLast(new ArrayList<Runnable>());
+
+                                    final ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
+                                    user().sendRawPacket(output, true);
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                );
+            } else {
+                try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                    ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
+                    user().sendRawPacket(output, currentThread);
+                }
+            }
         }
     }
 
@@ -313,47 +332,6 @@ public class PacketWrapper {
      * @param skipCurrentPipeline - Skip the current pipeline
      * @throws Exception if it fails to write
      */
-    public void sendAfterProcessing(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline) throws Exception {
-        if (!isCancelled()) {
-            user().getPostProcessingTasks().get().getLast().add(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                final ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
-                                user().sendRawPacket(output, true);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    }
-            );
-        }
-    }
-
-    public void sendAfterProcessing(Class<? extends Protocol> packetProtocol) throws Exception {
-        sendAfterProcessing(packetProtocol, true);
-    }
-
-    public void sendToServerAfterProcessing(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline) throws Exception {
-        if (!isCancelled()) {
-            user().getPostProcessingTasks().get().getLast().add(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
-                        user().sendRawPacketToServer(output, true);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-        }
-    }
-
-    public void sendToServerAfterProcessing(Class<? extends Protocol> packetProtocol) throws Exception {
-        sendToServerAfterProcessing(packetProtocol, true);
-    }
 
     /**
      * Let the packet go through the protocol pipes and write it to ByteBuf
@@ -432,9 +410,11 @@ public class PacketWrapper {
     public void send() throws Exception {
         if (!isCancelled()) {
             // Send
-            ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
-            writeToBuffer(output);
-            user().sendRawPacket(output);
+            try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
+                writeToBuffer(output);
+                user().sendRawPacket(output);
+            }
         }
     }
 
@@ -528,10 +508,12 @@ public class PacketWrapper {
     @Deprecated
     public void sendToServer() throws Exception {
         if (!isCancelled()) {
-            ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
-            writeToBuffer(output);
+            try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
+                writeToBuffer(output);
 
-            user().sendRawPacketToServer(output, true);
+                user().sendRawPacketToServer(output, true);
+            }
         }
     }
 
@@ -543,10 +525,29 @@ public class PacketWrapper {
      * @param currentThread       - Run in the same thread
      * @throws Exception if it fails to write
      */
-    public void sendToServer(Class<? extends Protocol> packetProtocol, boolean skipCurrentPipeline, boolean currentThread) throws Exception {
+    public void sendToServer(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline, boolean currentThread) throws Exception {
         if (!isCancelled()) {
-            ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
-            user().sendRawPacketToServer(output, currentThread);
+            List<Runnable> taskList = user().getAfterSendTasks().get().getLast();
+            if (!currentThread && taskList != null) {
+                taskList.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                                ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
+                                user().sendRawPacketToServer(output, true);
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            } else {
+                try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                    ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
+                    user().sendRawPacketToServer(output, true);
+                }
+            }
         }
     }
 

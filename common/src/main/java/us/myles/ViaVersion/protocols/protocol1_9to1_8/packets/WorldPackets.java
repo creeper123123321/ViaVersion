@@ -404,7 +404,7 @@ public class WorldPackets {
                             updateBlockEntity.write(Type.UNSIGNED_BYTE, (short) 2);
                             updateBlockEntity.write(Type.NBT, tag.get());
 
-                            updateBlockEntity.sendAfterProcessing(Protocol1_9TO1_8.class);
+                            updateBlockEntity.send(Protocol1_9TO1_8.class);
                         }
                     }
                 });

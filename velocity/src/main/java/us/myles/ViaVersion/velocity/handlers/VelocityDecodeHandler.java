@@ -13,7 +13,6 @@ import us.myles.ViaVersion.packets.Direction;
 import us.myles.ViaVersion.protocols.base.ProtocolInfo;
 import us.myles.ViaVersion.util.PipelineUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @ChannelHandler.Sharable
@@ -73,25 +72,15 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (PipelineUtil.containsCause(cause, CancelException.class)) {
-            if (info.isActive()) {
-                for (Runnable runnable : info.getPostProcessingTasks().get().pollLast()) {
-                    runnable.run();
-                }
-            }
+        if (PipelineUtil.containsCause(cause, CancelException.class))
             return;
-        }
         super.exceptionCaught(ctx, cause);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        info.getPostProcessingTasks().get().addLast(new ArrayList<>());
-        super.channelRead(ctx, msg);
-        if (info.isActive()) {
-            for (Runnable runnable : info.getPostProcessingTasks().get().pollLast()) {
-                runnable.run();
-            }
+        try (AutoCloseable obj = info.createTaskListAndRunOnClose()) {
+            super.channelRead(ctx, msg);
         }
         // todo implement to other platforms
         // todo test when writing packets
