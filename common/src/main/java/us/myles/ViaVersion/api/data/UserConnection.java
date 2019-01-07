@@ -259,4 +259,13 @@ public class UserConnection {
             });
         }
     }
+
+    /**
+     * Sends a raw packet to the server. It will submit a task to EventLoop
+     *
+     * @param packet Raw packet to be sent
+     */
+    public void sendRawPacketToServer(ByteBuf packet) {
+        sendRawPacketToServer(packet, false);
+    }
 }

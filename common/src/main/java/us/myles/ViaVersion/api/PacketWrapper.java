@@ -325,15 +325,6 @@ public class PacketWrapper {
     }
 
     /**
-     * Sends this packet to the user.
-     * It will be sent after the current packet is written to channel or the packet is processed by the server
-     *
-     * @param packetProtocol      - The protocol version of the packet.
-     * @param skipCurrentPipeline - Skip the current pipeline
-     * @throws Exception if it fails to write
-     */
-
-    /**
      * Let the packet go through the protocol pipes and write it to ByteBuf
      *
      * @param packetProtocol      - The protocol version of the packet.
