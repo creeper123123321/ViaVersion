@@ -300,21 +300,17 @@ public class PacketWrapper {
         if (!isCancelled()) {
             List<Runnable> taskList = user().getAfterSendTasks().get().getLast();
             if (!currentThread && taskList != null) {
-                taskList.add(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
-                                    user().getAfterSendTasks().get().addLast(new ArrayList<Runnable>());
-
-                                    final ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
-                                    user().sendRawPacket(output, true);
-                                } catch (Exception e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
+                taskList.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        try (AutoCloseable ignored = user().createTaskListAndRunOnClose()) {
+                            final ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
+                            user().sendRawPacket(output, true);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
-                );
+                    }
+                });
             } else {
                 try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
                     ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
@@ -401,7 +397,7 @@ public class PacketWrapper {
     public void send() throws Exception {
         if (!isCancelled()) {
             // Send
-            try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+            try (AutoCloseable ignored = user().createTaskListAndRunOnClose()) {
                 ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
                 writeToBuffer(output);
                 user().sendRawPacket(output);
@@ -499,7 +495,7 @@ public class PacketWrapper {
     @Deprecated
     public void sendToServer() throws Exception {
         if (!isCancelled()) {
-            try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+            try (AutoCloseable ignored = user().createTaskListAndRunOnClose()) {
                 ByteBuf output = inputBuffer == null ? user().getChannel().alloc().buffer() : inputBuffer.alloc().buffer();
                 writeToBuffer(output);
 
@@ -524,7 +520,7 @@ public class PacketWrapper {
                     @Override
                     public void run() {
                         try {
-                            try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                            try (AutoCloseable ignored = user().createTaskListAndRunOnClose()) {
                                 ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
                                 user().sendRawPacketToServer(output, true);
                             }
@@ -534,7 +530,7 @@ public class PacketWrapper {
                     }
                 });
             } else {
-                try (AutoCloseable obj = user().createTaskListAndRunOnClose()) {
+                try (AutoCloseable ignored = user().createTaskListAndRunOnClose()) {
                     ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
                     user().sendRawPacketToServer(output, true);
                 }
