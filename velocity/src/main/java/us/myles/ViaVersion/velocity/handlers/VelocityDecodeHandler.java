@@ -78,7 +78,7 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        try (AutoCloseable obj = info.createTaskListAndRunOnClose()) {
+        try (AutoCloseable ignored = info.createTaskListAndRunOnClose()) {
             super.channelRead(ctx, msg);
         }
         // todo implement to other platforms

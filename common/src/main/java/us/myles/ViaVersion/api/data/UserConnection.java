@@ -1,5 +1,6 @@
 package us.myles.ViaVersion.api.data;
 
+import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -51,9 +52,12 @@ public class UserConnection {
 
     public AutoCloseable createTaskListAndRunOnClose() {
         getAfterSendTasks().get().addLast(new ArrayList<Runnable>());
+        final int previousQueueSize = getAfterSendTasks().get().size();
         return new AutoCloseable() {
             @Override
             public void close() throws Exception {
+                final int currentQueueSize = getAfterSendTasks().get().size();
+                Preconditions.checkState(previousQueueSize == currentQueueSize, "currentQueueSize != previousQueueSize", currentQueueSize, previousQueueSize);
                 for (Runnable runnable : getAfterSendTasks().get().pollLast()) {
                     runnable.run();
                 }

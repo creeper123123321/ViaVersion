@@ -91,7 +91,7 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        try (AutoCloseable obj = info.createTaskListAndRunOnClose()) {
+        try (AutoCloseable ignored = info.createTaskListAndRunOnClose()) {
             super.write(ctx, msg, promise);
         }
     }
