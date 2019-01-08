@@ -104,7 +104,6 @@ public class Protocol1_13To1_12_2 extends Protocol {
                 }
             };
 
-    // @formatter:off
     // These are arbitrary rewrite values, it just needs an invalid color code character.
     protected static EnumMap<ChatColor, Character> SCOREBOARD_TEAM_NAME_REWRITE = new EnumMap<>(ChatColor.class);
     // @formatter:on

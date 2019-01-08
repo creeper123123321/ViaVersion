@@ -7,6 +7,7 @@ import io.netty.buffer.ByteBuf;
 import us.myles.ViaVersion.api.PacketWrapper;
 import us.myles.ViaVersion.api.Via;
 import us.myles.ViaVersion.api.minecraft.Position;
+import us.myles.ViaVersion.api.minecraft.chunks.Chunk1_8;
 import us.myles.ViaVersion.api.minecraft.item.Item;
 import us.myles.ViaVersion.api.protocol.Protocol;
 import us.myles.ViaVersion.api.remapper.PacketHandler;
@@ -248,9 +249,9 @@ public class WorldPackets {
         protocol.registerIncoming(State.PLAY, 0x07, 0x13, new PacketRemapper() {
             @Override
             public void registerMap() {
-                map(Type.UNSIGNED_BYTE); // 0 - Status
+                map(Type.VAR_INT, Type.UNSIGNED_BYTE); // 0 - Status
                 map(Type.POSITION); // 1 - Position
-                map(Type.UNSIGNED_BYTE); // 2 - Face
+                map(Type.BYTE); // 2 - Face
                 handler(new PacketHandler() {
                     @Override
                     public void handle(PacketWrapper wrapper) throws Exception {
