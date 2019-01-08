@@ -298,9 +298,8 @@ public class PacketWrapper {
      */
     public void send(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline, boolean currentThread) throws Exception {
         if (!isCancelled()) {
-            List<Runnable> taskList = user().getAfterSendTasks().get().getLast();
-            if (!currentThread && taskList != null) {
-                taskList.add(new Runnable() {
+            if (!currentThread && !user().getAfterSendTasks().get().isEmpty()) {
+                user().getAfterSendTasks().get().getLast().add(new Runnable() {
                     @Override
                     public void run() {
                         try (AutoCloseable ignored = user().createTaskListAndRunOnClose()) {
@@ -514,9 +513,8 @@ public class PacketWrapper {
      */
     public void sendToServer(final Class<? extends Protocol> packetProtocol, final boolean skipCurrentPipeline, boolean currentThread) throws Exception {
         if (!isCancelled()) {
-            List<Runnable> taskList = user().getAfterSendTasks().get().getLast();
-            if (!currentThread && taskList != null) {
-                taskList.add(new Runnable() {
+            if (!currentThread && !user().getAfterSendTasks().get().isEmpty()) {
+                user().getAfterSendTasks().get().getLast().add(new Runnable() {
                     @Override
                     public void run() {
                         try {
