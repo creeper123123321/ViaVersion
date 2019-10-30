@@ -5,85 +5,57 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import io.netty.handler.codec.MessageToMessageEncoder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import us.myles.ViaVersion.api.PacketWrapper;
 import us.myles.ViaVersion.api.Via;
 import us.myles.ViaVersion.api.data.UserConnection;
-import us.myles.ViaVersion.api.type.Type;
 import us.myles.ViaVersion.exception.CancelException;
-import us.myles.ViaVersion.packets.Direction;
-import us.myles.ViaVersion.protocols.base.ProtocolInfo;
+import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.util.PipelineUtil;
-
-import java.util.List;
 
 @ChannelHandler.Sharable
 @RequiredArgsConstructor
-public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
+public class VelocityEncodeHandler extends MessageToByteEncoder<ByteBuf> {
     @NonNull
     private final UserConnection info;
     private boolean handledCompression = false;
 
     @Override
-    protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
-        if (bytebuf.readableBytes() == 0) {
+    protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, ByteBuf out) throws Exception {
+        if (!bytebuf.isReadable()) {
             throw Via.getManager().isDebug() ? new CancelException() : CancelException.CACHED;
         }
+        out.writeBytes(bytebuf);
         boolean needsCompress = false;
         if (!handledCompression
-                && ctx.pipeline().names().indexOf("compression-encoder") > ctx.pipeline().names().indexOf("via-encoder")) {
+                && ctx.pipeline().names().indexOf("compression-encoder") > ctx.pipeline().names().indexOf(CommonTransformer.HANDLER_ENCODER_NAME)) {
             // Need to decompress this packet due to bad order
-            bytebuf = (ByteBuf) PipelineUtil.callDecode((MessageToMessageDecoder) ctx.pipeline().get("compression-decoder"), ctx, bytebuf).get(0);
-            ChannelHandler encoder = ctx.pipeline().get("via-encoder");
-            ChannelHandler decoder = ctx.pipeline().get("via-decoder");
+            ByteBuf decompressed = (ByteBuf) PipelineUtil.callDecode((MessageToMessageDecoder) ctx.pipeline().get("compression-decoder"), ctx, out).get(0);
+            try {
+                out.clear().writeBytes(decompressed);
+            } finally {
+                decompressed.release();
+            }
+            ChannelHandler encoder = ctx.pipeline().get(CommonTransformer.HANDLER_ENCODER_NAME);
+            ChannelHandler decoder = ctx.pipeline().get(CommonTransformer.HANDLER_DECODER_NAME);
             ctx.pipeline().remove(encoder);
             ctx.pipeline().remove(decoder);
-            ctx.pipeline().addAfter("compression-encoder", "via-encoder", encoder);
-            ctx.pipeline().addAfter("compression-decoder", "via-decoder", decoder);
+            ctx.pipeline().addAfter("compression-encoder", CommonTransformer.HANDLER_ENCODER_NAME, encoder);
+            ctx.pipeline().addAfter("compression-decoder", CommonTransformer.HANDLER_DECODER_NAME, decoder);
             needsCompress = true;
             handledCompression = true;
-        } else {
-            bytebuf.retain();
         }
-        // Increment sent
-        info.incrementSent();
-
-
-        if (info.isActive()) {
-            // Handle ID
-            int id = Type.VAR_INT.read(bytebuf);
-            // Transform
-            ByteBuf newPacket = bytebuf.alloc().buffer();
-            try {
-                PacketWrapper wrapper = new PacketWrapper(id, bytebuf, info);
-                ProtocolInfo protInfo = info.get(ProtocolInfo.class);
-                protInfo.getPipeline().transform(Direction.OUTGOING, protInfo.getState(), wrapper);
-
-                wrapper.writeToBuffer(newPacket);
-
-                bytebuf.clear();
-                bytebuf.release();
-                bytebuf = newPacket;
-            } catch (Throwable e) {
-                bytebuf.clear();
-                bytebuf.release();
-                newPacket.release();
-                throw e;
-            }
-        }
+        CommonTransformer.transformClientbound(out, info);
 
         if (needsCompress) {
-            ByteBuf old = bytebuf;
-            bytebuf = ctx.alloc().buffer();
+            ByteBuf compressed = ctx.alloc().buffer();
             try {
-                PipelineUtil.callEncode((MessageToByteEncoder) ctx.pipeline().get("compression-encoder"), ctx, old, bytebuf);
+                PipelineUtil.callEncode((MessageToByteEncoder) ctx.pipeline().get("compression-encoder"), ctx, out, compressed);
+                out.clear().writeBytes(compressed);
             } finally {
-                old.release();
+                compressed.release();
             }
         }
-        out.add(bytebuf);
     }
 
     @Override

@@ -5,6 +5,7 @@ import io.netty.channel.ChannelInitializer;
 import lombok.AllArgsConstructor;
 import us.myles.ViaVersion.api.data.UserConnection;
 import us.myles.ViaVersion.api.protocol.ProtocolPipeline;
+import us.myles.ViaVersion.handlers.CommonTransformer;
 
 import java.lang.reflect.Method;
 
@@ -30,7 +31,7 @@ public class VelocityChannelInitializer extends ChannelInitializer {
         new ProtocolPipeline(user);
 
         // We need to add a separated handler because Velocity uses pipeline().get(MINECRAFT_DECODER)
-        channel.pipeline().addBefore("minecraft-encoder", "via-encoder", new VelocityEncodeHandler(user));
-        channel.pipeline().addBefore("minecraft-decoder", "via-decoder", new VelocityDecodeHandler(user));
+        channel.pipeline().addBefore("minecraft-encoder", CommonTransformer.HANDLER_ENCODER_NAME, new VelocityEncodeHandler(user));
+        channel.pipeline().addBefore("minecraft-decoder", CommonTransformer.HANDLER_DECODER_NAME, new VelocityDecodeHandler(user));
     }
 }

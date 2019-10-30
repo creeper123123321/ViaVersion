@@ -2,10 +2,10 @@ package us.myles.ViaVersion.bungee.handlers;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.socket.SocketChannel;
 import lombok.Getter;
 import us.myles.ViaVersion.api.data.UserConnection;
 import us.myles.ViaVersion.api.protocol.ProtocolPipeline;
+import us.myles.ViaVersion.handlers.CommonTransformer;
 
 import java.lang.reflect.Method;
 
@@ -38,8 +38,8 @@ public class BungeeChannelInitializer extends ChannelInitializer<Channel> {
         BungeeEncodeHandler encoder = new BungeeEncodeHandler(info);
         BungeeDecodeHandler decoder = new BungeeDecodeHandler(info);
 
-        socketChannel.pipeline().addBefore("packet-encoder", "via-encoder", encoder);
-        socketChannel.pipeline().addBefore("packet-decoder", "via-decoder", decoder);
+        socketChannel.pipeline().addBefore("packet-encoder", CommonTransformer.HANDLER_ENCODER_NAME, encoder);
+        socketChannel.pipeline().addBefore("packet-decoder", CommonTransformer.HANDLER_DECODER_NAME, decoder);
 
     }
 }

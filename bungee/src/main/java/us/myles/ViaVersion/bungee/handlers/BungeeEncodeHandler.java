@@ -3,21 +3,16 @@ package us.myles.ViaVersion.bungee.handlers;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageEncoder;
-import us.myles.ViaVersion.api.PacketWrapper;
+import io.netty.handler.codec.MessageToByteEncoder;
 import us.myles.ViaVersion.api.Via;
 import us.myles.ViaVersion.api.data.UserConnection;
-import us.myles.ViaVersion.api.type.Type;
 import us.myles.ViaVersion.bungee.util.BungeePipelineUtil;
 import us.myles.ViaVersion.exception.CancelException;
-import us.myles.ViaVersion.packets.Direction;
-import us.myles.ViaVersion.protocols.base.ProtocolInfo;
+import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.util.PipelineUtil;
 
-import java.util.List;
-
 @ChannelHandler.Sharable
-public class BungeeEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
+public class BungeeEncodeHandler extends MessageToByteEncoder<ByteBuf> {
     private final UserConnection info;
     private boolean handledCompression = false;
 
@@ -25,57 +20,41 @@ public class BungeeEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
         this.info = info;
     }
 
-
     @Override
-    protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
-        if (bytebuf.readableBytes() == 0) {
+    protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, ByteBuf out) throws Exception {
+        if (!bytebuf.isReadable()) {
             throw Via.getManager().isDebug() ? new CancelException() : CancelException.CACHED;
         }
+        out.writeBytes(bytebuf);
         boolean needsCompress = false;
         if (!handledCompression) {
             if (ctx.pipeline().names().indexOf("compress") > ctx.pipeline().names().indexOf("via-encoder")) {
                 // Need to decompress this packet due to bad order
-                bytebuf = BungeePipelineUtil.decompress(ctx, bytebuf);
-                ChannelHandler encoder = ctx.pipeline().get("via-decoder");
-                ChannelHandler decoder = ctx.pipeline().get("via-encoder");
-                ctx.pipeline().remove(encoder);
-                ctx.pipeline().remove(decoder);
-                ctx.pipeline().addAfter("decompress", "via-decoder", encoder);
-                ctx.pipeline().addAfter("compress", "via-encoder", decoder);
+                ByteBuf decompressed = BungeePipelineUtil.decompress(ctx, out);
+                try {
+                    out.clear().writeBytes(decompressed);
+                } finally {
+                    decompressed.release();
+                }
+                ChannelHandler dec = ctx.pipeline().get(CommonTransformer.HANDLER_DECODER_NAME);
+                ChannelHandler enc = ctx.pipeline().get(CommonTransformer.HANDLER_ENCODER_NAME);
+                ctx.pipeline().remove(dec);
+                ctx.pipeline().remove(enc);
+                ctx.pipeline().addAfter("decompress", CommonTransformer.HANDLER_DECODER_NAME, dec);
+                ctx.pipeline().addAfter("compress", CommonTransformer.HANDLER_ENCODER_NAME, enc);
                 needsCompress = true;
                 handledCompression = true;
             }
         }
-        // Increment sent
-        info.incrementSent();
-
-        if (info.isActive()) {
-            // Handle ID
-            int id = Type.VAR_INT.read(bytebuf);
-            // Transform
-            ByteBuf oldPacket = bytebuf.copy();
-            bytebuf.clear();
-
-            try {
-                PacketWrapper wrapper = new PacketWrapper(id, oldPacket, info);
-                ProtocolInfo protInfo = info.get(ProtocolInfo.class);
-                protInfo.getPipeline().transform(Direction.OUTGOING, protInfo.getState(), wrapper);
-                wrapper.writeToBuffer(bytebuf);
-            } catch (Throwable e) {
-                bytebuf.clear();
-                throw e;
-            } finally {
-                oldPacket.release();
-            }
-        }
+        CommonTransformer.transformClientbound(out, info);
 
         if (needsCompress) {
-            ByteBuf old = bytebuf;
-            bytebuf = BungeePipelineUtil.compress(ctx, bytebuf);
-            old.release();
-            out.add(bytebuf);
-        } else {
-            out.add(bytebuf.retain());
+            ByteBuf compressed = BungeePipelineUtil.compress(ctx, out);
+            try {
+                out.clear().writeBytes(compressed);
+            } finally {
+                compressed.release();
+            }
         }
     }
 
