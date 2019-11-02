@@ -40,6 +40,7 @@ public class SpongeEncodeHandler extends MessageToByteEncoder implements ViaHand
 
     @Override
     public void transform(ByteBuf bytebuf) throws Exception {
+        if (!CommonTransformer.mayModifyPacket(info)) return;
         CommonTransformer.transformClientbound(bytebuf, info);
     }
 

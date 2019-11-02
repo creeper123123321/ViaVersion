@@ -1,6 +1,8 @@
 package us.myles.ViaVersion.exception;
 
-public class CancelException extends Exception {
+import io.netty.handler.codec.EncoderException;
+
+public class CancelException extends EncoderException { // Encoder exception as workaround for performance issue caused by (ab)using exceptions
     public static final CancelException CACHED = new CancelException("Cached - Enable /viaver debug to not use cached exception") {
         @Override
         public synchronized Throwable fillInStackTrace() {
@@ -21,9 +23,5 @@ public class CancelException extends Exception {
 
     public CancelException(Throwable cause) {
         super(cause);
-    }
-
-    public CancelException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

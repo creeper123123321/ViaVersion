@@ -23,9 +23,13 @@ public class SpongeDecodeHandler extends ByteToMessageDecoder {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> list) throws Exception {
+        if (CommonTransformer.preServerboundCheck(info)) return;
+        if (!CommonTransformer.mayModifyPacket(info)) {
+            list.add(bytebuf.retain());
+            return;
+        }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
         try {
-            if (CommonTransformer.preServerboundCheck(info)) return;
             CommonTransformer.transformServerbound(draft, info);
 
             // call minecraft decoder

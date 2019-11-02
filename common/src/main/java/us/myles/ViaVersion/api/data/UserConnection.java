@@ -201,6 +201,8 @@ public class UserConnection {
                     }
                 }
             });
+        } else {
+            getChannel().close(); // Just disconnect, we don't know what the connection is
         }
 
     }

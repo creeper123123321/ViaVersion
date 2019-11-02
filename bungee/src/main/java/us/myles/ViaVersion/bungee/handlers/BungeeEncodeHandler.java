@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import us.myles.ViaVersion.api.Via;
 import us.myles.ViaVersion.api.data.UserConnection;
 import us.myles.ViaVersion.bungee.util.BungeePipelineUtil;
 import us.myles.ViaVersion.exception.CancelException;
@@ -22,10 +21,8 @@ public class BungeeEncodeHandler extends MessageToByteEncoder<ByteBuf> {
 
     @Override
     protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, ByteBuf out) throws Exception {
-        if (!bytebuf.isReadable()) {
-            throw Via.getManager().isDebug() ? new CancelException() : CancelException.CACHED;
-        }
         out.writeBytes(bytebuf);
+        if (!CommonTransformer.mayModifyPacket(info)) return;
         boolean needsCompress = false;
         if (!handledCompression) {
             if (ctx.pipeline().names().indexOf("compress") > ctx.pipeline().names().indexOf("via-encoder")) {

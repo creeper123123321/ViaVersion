@@ -6,8 +6,8 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import us.myles.ViaVersion.api.data.UserConnection;
 import us.myles.ViaVersion.bukkit.util.NMSUtil;
 import us.myles.ViaVersion.exception.CancelException;
-import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.handlers.ChannelHandlerContextWrapper;
+import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.handlers.ViaHandler;
 import us.myles.ViaVersion.util.PipelineUtil;
 
@@ -56,6 +56,7 @@ public class BukkitEncodeHandler extends MessageToByteEncoder implements ViaHand
     }
 
     public void transform(ByteBuf bytebuf) throws Exception {
+        if (!CommonTransformer.mayModifyPacket(info)) return;
         CommonTransformer.transformClientbound(bytebuf, info);
     }
 

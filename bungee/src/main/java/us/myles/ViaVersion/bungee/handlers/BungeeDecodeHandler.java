@@ -22,9 +22,13 @@ public class BungeeDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     protected void decode(final ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
+        if (CommonTransformer.preServerboundCheck(info)) return;
+        if (!CommonTransformer.mayModifyPacket(info)) {
+            out.add(bytebuf.retain());
+            return;
+        }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
         try {
-            if (CommonTransformer.preServerboundCheck(info)) return;
             CommonTransformer.transformServerbound(draft, info);
             out.add(draft.retain());
         } finally {

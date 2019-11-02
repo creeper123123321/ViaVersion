@@ -18,6 +18,10 @@ public class CommonTransformer {
         return user.incrementReceived() && user.handlePPS();
     }
 
+    public static boolean mayModifyPacket(UserConnection user) {
+        return user.isActive();
+    }
+
     public static void transformClientbound(ByteBuf draft, UserConnection user) throws Exception {
         if (!draft.isReadable()) return;
         // Increment sent
@@ -31,8 +35,6 @@ public class CommonTransformer {
     }
 
     private static void transform(ByteBuf draft, UserConnection user, Direction direction) throws Exception {
-        if (!user.isActive()) return;
-
         int id = Type.VAR_INT.read(draft);
         if (id == PacketWrapper.PASSTHROUGH_ID) return;
         PacketWrapper wrapper = new PacketWrapper(id, draft, user);
