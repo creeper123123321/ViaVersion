@@ -25,6 +25,7 @@ public class BukkitDecodeHandler extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> list) throws Exception {
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
         try {
+            if (CommonTransformer.preServerboundCheck(info)) return;
             CommonTransformer.transformServerbound(draft, info);
 
             try {

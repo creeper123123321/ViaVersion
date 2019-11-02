@@ -11,6 +11,13 @@ public class CommonTransformer {
     public static final String HANDLER_DECODER_NAME = "via-decoder";
     public static final String HANDLER_ENCODER_NAME = "via-encoder";
 
+    public static boolean preServerboundCheck(UserConnection user) {
+        // Ignore if pending disconnect
+        if (user.isPendingDisconnect()) return true;
+        // Increment received + Check PPS
+        return user.incrementReceived() && user.handlePPS();
+    }
+
     public static void transformClientbound(ByteBuf draft, UserConnection user) throws Exception {
         if (!draft.isReadable()) return;
         // Increment sent
@@ -20,10 +27,6 @@ public class CommonTransformer {
 
     public static void transformServerbound(ByteBuf draft, UserConnection user) throws Exception {
         if (!draft.isReadable()) return;
-        // Ignore if pending disconnect
-        if (user.isPendingDisconnect()) return;
-        // Increment received + Check PPS
-        if (user.incrementReceived() && user.handlePPS()) return;
         transform(draft, user, Direction.INCOMING);
     }
 

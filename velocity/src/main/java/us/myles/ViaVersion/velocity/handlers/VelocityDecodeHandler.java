@@ -22,6 +22,7 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
         info.getVelocityLock().readLock().lock();
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
         try {
+            if (CommonTransformer.preServerboundCheck(info)) return;
             CommonTransformer.transformServerbound(draft, info);
             out.add(draft.retain());
         } finally {
