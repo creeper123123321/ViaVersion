@@ -30,7 +30,9 @@ public class SpongeDecodeHandler extends ByteToMessageDecoder {
         }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
         try {
-            CommonTransformer.transformServerbound(draft, info);
+            if (CommonTransformer.willTransformPacket(info)) {
+                CommonTransformer.transformServerbound(draft, info);
+            }
 
             // call minecraft decoder
             try {

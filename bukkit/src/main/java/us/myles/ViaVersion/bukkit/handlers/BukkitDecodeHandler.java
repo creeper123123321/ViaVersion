@@ -24,13 +24,11 @@ public class BukkitDecodeHandler extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> list) throws Exception {
         if (CommonTransformer.preServerboundCheck(info)) return;
-        if (!CommonTransformer.willTransformPacket(info)) {
-            list.add(bytebuf.retain().readSlice(bytebuf.readableBytes()));
-            return;
-        }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
         try {
-            CommonTransformer.transformServerbound(draft, info);
+            if (CommonTransformer.willTransformPacket(info)) {
+                CommonTransformer.transformServerbound(draft, info);
+            }
 
             try {
                 list.addAll(PipelineUtil.callDecode(this.minecraftDecoder, ctx, draft));
