@@ -8,7 +8,8 @@ import us.myles.ViaVersion.api.Via;
 import us.myles.ViaVersion.api.data.UserConnection;
 import us.myles.ViaVersion.api.platform.providers.ViaProviders;
 import us.myles.ViaVersion.api.remapper.PacketRemapper;
-import us.myles.ViaVersion.exception.CancelException;
+import us.myles.ViaVersion.exception.DecoderCancelException;
+import us.myles.ViaVersion.exception.EncoderCancelException;
 import us.myles.ViaVersion.packets.Direction;
 import us.myles.ViaVersion.packets.State;
 
@@ -197,7 +198,11 @@ public abstract class Protocol {
         if (protocolPacket.getRemapper() != null) {
             protocolPacket.getRemapper().remap(packetWrapper);
             if (packetWrapper.isCancelled()) {
-                throw Via.getManager().isDebug() ? new CancelException() : CancelException.CACHED;
+                if (direction == Direction.OUTGOING) {
+                    throw Via.getManager().isDebug() ? new EncoderCancelException() : EncoderCancelException.CACHED;
+                } else {
+                    throw Via.getManager().isDebug() ? new DecoderCancelException() : DecoderCancelException.CACHED;
+                }
             }
         }
     }

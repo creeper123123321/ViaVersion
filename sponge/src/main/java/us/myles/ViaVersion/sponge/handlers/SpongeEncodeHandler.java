@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import us.myles.ViaVersion.api.data.UserConnection;
-import us.myles.ViaVersion.exception.CancelException;
+import us.myles.ViaVersion.exception.EncoderCancelException;
 import us.myles.ViaVersion.handlers.ChannelHandlerContextWrapper;
 import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.handlers.ViaHandler;
@@ -47,7 +47,7 @@ public class SpongeEncodeHandler extends MessageToByteEncoder implements ViaHand
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (PipelineUtil.containsCause(cause, CancelException.class)) return;
+        if (PipelineUtil.containsCause(cause, EncoderCancelException.class)) return;
         super.exceptionCaught(ctx, cause);
     }
 }

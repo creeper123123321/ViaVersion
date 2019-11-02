@@ -10,7 +10,8 @@ import us.myles.ViaVersion.api.protocol.Protocol;
 import us.myles.ViaVersion.api.remapper.ValueCreator;
 import us.myles.ViaVersion.api.type.Type;
 import us.myles.ViaVersion.api.type.TypeConverter;
-import us.myles.ViaVersion.exception.CancelException;
+import us.myles.ViaVersion.exception.DecoderCancelException;
+import us.myles.ViaVersion.exception.EncoderCancelException;
 import us.myles.ViaVersion.exception.InformativeException;
 import us.myles.ViaVersion.packets.Direction;
 import us.myles.ViaVersion.packets.State;
@@ -304,7 +305,7 @@ public class PacketWrapper {
                 ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.OUTGOING);
                 user().sendRawPacket(output, currentThread);
             } catch (Exception e) {
-                if (!PipelineUtil.containsCause(e, CancelException.class)) {
+                if (!PipelineUtil.containsCause(e, EncoderCancelException.class)) {
                     throw e;
                 }
             }
@@ -505,7 +506,7 @@ public class PacketWrapper {
                 ByteBuf output = constructPacket(packetProtocol, skipCurrentPipeline, Direction.INCOMING);
                 user().sendRawPacketToServer(output, currentThread);
             } catch (Exception e) {
-                if (!PipelineUtil.containsCause(e, CancelException.class)) {
+                if (!PipelineUtil.containsCause(e, DecoderCancelException.class)) {
                     throw e;
                 }
             }

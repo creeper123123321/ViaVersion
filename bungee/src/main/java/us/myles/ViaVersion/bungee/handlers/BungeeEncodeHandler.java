@@ -6,7 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import us.myles.ViaVersion.api.data.UserConnection;
 import us.myles.ViaVersion.bungee.util.BungeePipelineUtil;
-import us.myles.ViaVersion.exception.CancelException;
+import us.myles.ViaVersion.exception.EncoderCancelException;
 import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.util.PipelineUtil;
 
@@ -69,7 +69,7 @@ public class BungeeEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (PipelineUtil.containsCause(cause, CancelException.class)) return;
+        if (PipelineUtil.containsCause(cause, EncoderCancelException.class)) return;
         super.exceptionCaught(ctx, cause);
     }
 }

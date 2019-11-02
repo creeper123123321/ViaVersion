@@ -6,7 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import lombok.AllArgsConstructor;
 import us.myles.ViaVersion.api.data.UserConnection;
-import us.myles.ViaVersion.exception.CancelException;
+import us.myles.ViaVersion.exception.DecoderCancelException;
 import us.myles.ViaVersion.handlers.CommonTransformer;
 import us.myles.ViaVersion.util.PipelineUtil;
 
@@ -37,7 +37,7 @@ public class VelocityDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (PipelineUtil.containsCause(cause, CancelException.class)) return;
+        if (PipelineUtil.containsCause(cause, DecoderCancelException.class)) return;
         super.exceptionCaught(ctx, cause);
     }
 }
