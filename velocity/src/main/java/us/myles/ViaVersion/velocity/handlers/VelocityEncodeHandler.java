@@ -35,7 +35,7 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
             if (!handledCompression
                     && ctx.pipeline().names().indexOf("compression-encoder") > ctx.pipeline().names().indexOf(CommonTransformer.HANDLER_ENCODER_NAME)) {
                 // Need to decompress this packet due to bad order
-                ByteBuf decompressed = (ByteBuf) PipelineUtil.callDecode((MessageToMessageDecoder) ctx.pipeline().get("compression-decoder"), ctx, out).get(0);
+                ByteBuf decompressed = (ByteBuf) PipelineUtil.callDecode((MessageToMessageDecoder) ctx.pipeline().get("compression-decoder"), ctx, draft).get(0);
                 try {
                     draft.clear().writeBytes(decompressed);
                 } finally {
@@ -55,7 +55,7 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
             if (needsCompress) {
                 ByteBuf compressed = ctx.alloc().buffer();
                 try {
-                    PipelineUtil.callEncode((MessageToByteEncoder) ctx.pipeline().get("compression-encoder"), ctx, out, compressed);
+                    PipelineUtil.callEncode((MessageToByteEncoder) ctx.pipeline().get("compression-encoder"), ctx, draft, compressed);
                     draft.clear().writeBytes(compressed);
                 } finally {
                     compressed.release();
