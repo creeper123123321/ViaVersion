@@ -18,14 +18,16 @@ public class CommonTransformer {
         return user.incrementReceived() && user.handlePPS();
     }
 
-    public static boolean mayModifyPacket(UserConnection user) {
+    public static void preClientbound(UserConnection user) {
+        user.incrementSent();
+    }
+
+    public static boolean willTransformPacket(UserConnection user) {
         return user.isActive();
     }
 
     public static void transformClientbound(ByteBuf draft, UserConnection user) throws Exception {
         if (!draft.isReadable()) return;
-        // Increment sent
-        user.incrementSent();
         transform(draft, user, Direction.OUTGOING);
     }
 

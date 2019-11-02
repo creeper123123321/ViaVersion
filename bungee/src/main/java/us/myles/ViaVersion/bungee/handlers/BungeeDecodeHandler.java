@@ -23,7 +23,7 @@ public class BungeeDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
     @Override
     protected void decode(final ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
         if (CommonTransformer.preServerboundCheck(info)) return;
-        if (!CommonTransformer.mayModifyPacket(info)) {
+        if (!CommonTransformer.willTransformPacket(info)) {
             out.add(bytebuf.retain());
             return;
         }

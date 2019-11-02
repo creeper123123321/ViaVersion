@@ -22,7 +22,8 @@ public class BungeeEncodeHandler extends MessageToByteEncoder<ByteBuf> {
     @Override
     protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, ByteBuf out) throws Exception {
         out.writeBytes(bytebuf);
-        if (!CommonTransformer.mayModifyPacket(info)) return;
+        CommonTransformer.preClientbound(info);
+        if (!CommonTransformer.willTransformPacket(info)) return;
         boolean needsCompress = false;
         if (!handledCompression) {
             if (ctx.pipeline().names().indexOf("compress") > ctx.pipeline().names().indexOf("via-encoder")) {

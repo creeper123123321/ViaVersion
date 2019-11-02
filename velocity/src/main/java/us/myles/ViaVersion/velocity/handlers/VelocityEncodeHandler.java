@@ -22,7 +22,8 @@ public class VelocityEncodeHandler extends MessageToByteEncoder<ByteBuf> {
     @Override
     protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, ByteBuf out) throws Exception {
         out.writeBytes(bytebuf);
-        if (!CommonTransformer.mayModifyPacket(info)) return;
+        CommonTransformer.preClientbound(info);
+        if (!CommonTransformer.willTransformPacket(info)) return;
         boolean needsCompress = false;
         if (!handledCompression
                 && ctx.pipeline().names().indexOf("compression-encoder") > ctx.pipeline().names().indexOf(CommonTransformer.HANDLER_ENCODER_NAME)) {
