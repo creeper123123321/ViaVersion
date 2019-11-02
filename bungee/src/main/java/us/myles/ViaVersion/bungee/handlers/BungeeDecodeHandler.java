@@ -24,7 +24,7 @@ public class BungeeDecodeHandler extends MessageToMessageDecoder<ByteBuf> {
     protected void decode(final ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
         if (CommonTransformer.preServerboundCheck(info)) return;
         if (!CommonTransformer.willTransformPacket(info)) {
-            out.add(bytebuf.retain());
+            out.add(bytebuf.readSlice(bytebuf.readableBytes()));
             return;
         }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);

@@ -26,7 +26,7 @@ public class VelocityEncodeHandler extends MessageToMessageEncoder<ByteBuf> {
     protected void encode(final ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
         CommonTransformer.preClientbound(info);
         if (!CommonTransformer.willTransformPacket(info)) {
-            out.add(bytebuf.retain());
+            out.add(bytebuf.readSlice(bytebuf.readableBytes()));
             return;
         }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);

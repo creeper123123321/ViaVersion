@@ -25,7 +25,7 @@ public class SpongeDecodeHandler extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> list) throws Exception {
         if (CommonTransformer.preServerboundCheck(info)) return;
         if (!CommonTransformer.willTransformPacket(info)) {
-            list.add(bytebuf.retain());
+            list.add(bytebuf.readSlice(bytebuf.readableBytes()));
             return;
         }
         ByteBuf draft = ctx.alloc().buffer().writeBytes(bytebuf);
