@@ -21,8 +21,7 @@ import us.myles.ViaVersion.api.data.StoredObject;
 import us.myles.ViaVersion.api.data.UserConnection;
 
 public class MovementTracker extends StoredObject {
-    private static final long IDLE_PACKET_DELAY = 50L; // Update every 50ms (20tps)
-    private long nextIdlePacket = 0L;
+    private long ticksAhead = 0L;
     private boolean ground = true;
 
     public MovementTracker(UserConnection user) {
@@ -31,11 +30,13 @@ public class MovementTracker extends StoredObject {
 
     public void incrementIdlePacket() {
         // Notify of next update
-        this.nextIdlePacket = Long.max(nextIdlePacket + IDLE_PACKET_DELAY, System.currentTimeMillis());
+        this.ticksAhead++;
     }
 
-    public long getNextIdlePacket() {
-        return nextIdlePacket;
+    public boolean nextTick() {
+        ticksAhead--;
+        if (ticksAhead < 0) ticksAhead = 0;
+        return ticksAhead == 0;
     }
 
     public boolean isGround() {
